@@ -1,6 +1,7 @@
 from random import shuffle
 import queue
 import fileinput
+from colorama import Fore, Back, Style, init
 from termcolor import colored
 
 from deprecated import deprecated
@@ -201,6 +202,10 @@ class FrontMidBotHand(object):
         self.ev = 0
         self.hand_completed = False
 
+    def concat_hand_temp(self):
+        self.hand.extend(self.temp_hand)
+        self.temp_hand = []
+
     def evaluate(self):
         if self.number_of_cards == 5:
             hand_type = ''
@@ -241,14 +246,13 @@ class FrontMidBotHand(object):
     def add_card_to_temp(self, new_card):
         if isinstance(new_card, list):
             for card in new_card:
-                self.hand.append(card)
+                self.temp_hand.append(card)
         elif isinstance(new_card, Card):
-            self.hand.append(new_card)
-
+            self.temp_hand.append(new_card)
             if len(self.hand) + len(self.temp_hand) == self.number_of_cards:
                 self.hand_completed = True
 
-    def set(self):
+    def set_temp_to_hand(self):
         self.hand.extend(self.temp_hand)
         self.temp_hand = []
 
@@ -286,6 +290,12 @@ class Hand(object):
         list_top_hand = [str(hand) + ' | ' for hand in self.top_row.hand]
         top_hand = top_hand.join(list_top_hand)
 
+        # # front temp hand
+        # top_hand_temp = ''
+        # list_top_hand_temp = [str(hand) + ' | ' for hand in self.top_row.temp_hand]
+        # top_hand_temp = top_hand_temp.join(list_top_hand_temp)
+        # top_hand_temp = (Back.LIGHTBLACK_EX, top_hand_temp)
+
         # mid hand
         mid_hand = ''
         list_mid_hand = [str(hand) + ' | ' for hand in self.mid_row.hand]
@@ -301,6 +311,56 @@ class Hand(object):
         game_look = game_look.join(look)
         return game_look
 
+    def print_hand(self):
+
+        init()
+        # front hand
+        top_hand = ''
+        list_top_hand = [str(hand) + ' | ' for hand in self.top_row.hand]
+        top_hand = top_hand.join(list_top_hand)
+
+        # front temp hand
+        top_hand_temp = ''
+        if len(self.top_row.temp_hand) > 0:
+            list_top_hand_temp = [str(hand) + ' | ' for hand in self.top_row.temp_hand]
+            top_hand_temp = top_hand_temp.join(list_top_hand_temp)
+
+        # mid hand
+        mid_hand = ''
+        if len(self.mid_row.hand) > 0:
+            list_mid_hand = [str(hand) + ' | ' for hand in self.mid_row.hand]
+            mid_hand = mid_hand.join(list_mid_hand)
+
+        # mid hand_temp
+        mid_hand_temp = ''
+        if len(self.mid_row.temp_hand) > 0:
+            list_mid_hand = [str(hand) + ' | ' for hand in self.mid_row.temp_hand]
+            mid_hand_temp = mid_hand_temp.join(list_mid_hand)
+
+        # bottom hand
+        bottom_hand = ''
+        if len(self.bottom_row.temp_hand) > 0:
+            list_bottom_hand = [str(hand) + ' | ' for hand in self.bottom_row.hand]
+            bottom_hand = bottom_hand.join(list_bottom_hand)
+
+        # bottom hand_temp
+        bottom_hand_temp = ''
+        if len(self.bottom_row.temp_hand) > 0:
+            list_mid_hand = [str(hand) + ' | ' for hand in self.bottom_row.temp_hand]
+            bottom_hand_temp = bottom_hand_temp.join(list_mid_hand)
+
+        line = '_' * 25
+        # line = (Back.WHITE, line)
+
+        print(colored(line, 'blue', ))
+        print(colored(top_hand, 'white'), end='')
+        print(colored(top_hand_temp, 'red', 'on_cyan'))
+        print(colored(mid_hand), end='')
+        print(colored(mid_hand_temp, 'red', 'on_cyan'))
+        print(colored(bottom_hand), end='')
+        print(colored(bottom_hand_temp, 'red', 'on_cyan'))
+        print(colored(line, 'blue'))
+
     def evaluate(self):
         pass
 
@@ -312,11 +372,26 @@ class Hand(object):
             print('Hand is completed')
             return False
 
+    def add_card_to_front_temp(self, card):
+        if not self.top_row.hand_completed:
+            self.top_row.add_card_to_temp(card)
+            return True
+        else:
+            print('Hand is completed')
+            return False
+
     def add_card_to_mid(self, card):
         if not self.mid_row.hand_completed:
             self.mid_row.add_card(card)
             return True
+        else:
+            print('Hand is completed')
+            return
 
+    def add_card_to_mid_temp(self, card):
+        if not self.mid_row.hand_completed:
+            self.mid_row.add_card_to_temp(card)
+            return True
         else:
             print('Hand is completed')
             return False
@@ -329,40 +404,120 @@ class Hand(object):
             print('Hand is completed')
             return False
 
+    def add_card_to_bottom_temp(self, card):
+        if not self.bottom_row.hand_completed:
+            self.bottom_row.add_card_to_temp(card)
+            return True
+        else:
+            print('Hand is completed')
+            return False
+
     def reset(self):
-        pass
+        cards = []
+        cards.extend(self.top_row.temp_hand)
+        cards.extend(self.mid_row.temp_hand)
+        cards.extend(self.bottom_row.temp_hand)
+        self.top_row.temp_hand = []
+        self.mid_row.temp_hand = []
+        self.bottom_row.temp_hand = []
+        return cards
 
     def set_changes(self):
-        pass
+        self.top_row.set_temp_to_hand()
+        self.mid_row.set_temp_to_hand()
+        self.bottom_row.set_temp_to_hand()
 
     def evaluate_hand(self):
         pass
 
 
-def read_stdin():
-    pass
+class CardsToPlace(object):
+    def __init__(self, cards):
+        self.list_of_cards = cards
+        self.ready_to_use = [True for _ in range(len(cards))]
+
+    def __str__(self):
+        str_hand = ''
+        return str_hand.join([str(card) + ' ' for card in self.list_of_cards])
+
+    def print(self):
+        colors = {True: ''}
+        for card, color in zip(self.list_of_cards, self.ready_to_use):
+            if not color:
+                print(colored(card, on_color='on_red'), end=' ')
+            else:
+                print(card, end=' ')
+
+    def get_card(self, card_index: int):
+        # card 1 is card 0
+        if card_index <= len(self.list_of_cards) + 1:
+            self.ready_to_use[card_index - 1] = False
+        return self.list_of_cards[card_index - 1]
+
+    def check_if_available(self, card_index):
+        if self.ready_to_use[card_index - 1]:
+            return True
+        else:
+            return False
+
+    def reset_card(self):
+        self.ready_to_use = [True for _ in len(self.list_of_cards)]
 
 
 def game():
+    # How to play
+    # choose a card and to what row it should be placed
+    # 2-3  take 2nd card and place it to bottom row
     random_hand = Deck()
     board_status = Hand()
-    starting_hand = [random_hand.get_card() for _ in range(5)]
-    burn_hands = []
-    [print(x) for x in starting_hand]
-    for line in fileinput.input():
-        card_number = int(line[0])
-        to_hand = line[-2]
-        if to_hand == '1':
-            board_status.add_card_to_front(starting_hand[card_number])
-        elif to_hand == '2':
-            board_status.add_card_to_mid(starting_hand[card_number])
-        elif to_hand == '3':
-            board_status.add_card_to_bottom(starting_hand[card_number])
-        else:
-            print(f'Wrong command format write: 1->3 as first card to bottom row')
+    holdings = CardsToPlace([random_hand.get_card() for _ in range(5)])
+    holdings.print()
 
-        print(board_status)
-    pass
+    for line in fileinput.input():
+        line = line.replace('\n', '')
+        if line == 'set':
+            board_status.set_changes()
+            print('Next round')
+            continue
+        if line == 'reset':
+            board_status.reset()
+            holdings.reset_card()
+            print('hands_reseted')
+            continue
+        if len(line) > 1:
+            card_number = int(line[0])
+            to_hand = line[-1]
+            if to_hand == '1':
+                if holdings.check_if_available(card_number) and not board_status.top_row.hand_completed:
+                    board_status.add_card_to_front_temp(holdings.get_card(card_number))
+                else:
+                    print('Card already used or row is full')
+            elif to_hand == '2':
+                if holdings.check_if_available(card_number) and not board_status.mid_row.hand_completed:
+                    board_status.add_card_to_mid_temp(holdings.get_card(card_number))
+                else:
+                    print('Card already used or row is full ')
+            elif to_hand == '3' and not board_status.bottom_row.hand_completed:
+                if holdings.check_if_available(card_number):
+                    board_status.add_card_to_bottom_temp(holdings.get_card(card_number))
+                else:
+                    print('Card already used or row is full ')
+            else:
+                print(f'Wrong command format write: 1->3 as first card to bottom row')
+
+        board_status.print_hand()
+        holdings.print()
+
+
+def test_board_look():
+    test_hand = Hand()
+    [test_hand.add_card_to_front(card1) for _ in range(1)]
+    [test_hand.add_card_to_front_temp(card1) for _ in range(2)]
+    [test_hand.add_card_to_mid(card1) for _ in range(2)]
+    [test_hand.add_card_to_mid_temp(card1) for _ in range(2)]
+    [test_hand.add_card_to_bottom(card1) for _ in range(2)]
+    [test_hand.add_card_to_bottom_temp(card1) for _ in range(2)]
+    test_hand.print_hand()
 
 
 if __name__ == '__main__':
@@ -376,9 +531,16 @@ if __name__ == '__main__':
 
     # hs = HandStrength(straight)
     # print(hs.hand_type)
-    # test_hand = Hand()
-    # [test_hand.add_card_to_front(card1) for _ in range(3)]
+    test_hand = Hand()
+    [test_hand.add_card_to_front(card1) for _ in range(1)]
+
+    [test_hand.add_card_to_front_temp(card1) for _ in range(2)]
+    #  from colorama import init, Fore
+    # from termcolor import colored
+
     # [test_hand.add_card_to_mid(card1) for _ in range(5)]
     # [test_hand.add_card_to_bottom(card2) for _ in range(5)]
     # print(test_hand)
+    # init()
+
     game()
