@@ -3,7 +3,7 @@
 [X] - card dealing \
 [X] - hand representation and logic \
 [X] - visualization in terminal \
-[] - final hand evaluation \
+[] - final hand evaluation (single player, punctation)  \
 [] - hand history model(state, evaluation, reward) \
 [] - interactive gui \
 [] - random solo game \
