@@ -1,7 +1,7 @@
 # OFC Open face chinese poker 
 ##  Plan to do: 
 [X] - card dealing \
-[X] - hand representation and logic \ 
+[X] - hand representation and logic \
 [X] - visualization in terminal \
 [] - final hand evaluation \
 [] - hand history model(state, evaluation, reward) \
