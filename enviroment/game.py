@@ -5,9 +5,15 @@ import fileinput
 from colorama import init
 from termcolor import colored
 
-top_hand_royalties = {'66': 1, '77': 2, '88': 3, '99': 4, '´1010': 5, '1111': 6, '1212': 7, '1313': 8, '11': 9,
-                      '222': 10, '333': 11, '444': 12, '555': 13, '666': 14, '777': 15, '888': 16, '999': 17,
-                      '101010': 18, '111111': 19, '121212': 20, '131313': 21, '111': 22}
+TOP_HAND_SCORE = {'66': 1, '77': 2, '88': 3, '99': 4, '´1010': 5, '1111': 6, '1212': 7, '1313': 8, '11': 9,
+                  '222': 10, '333': 11, '444': 12, '555': 13, '666': 14, '777': 15, '888': 16, '999': 17,
+                  '101010': 18, '111111': 19, '121212': 20, '131313': 21, '111': 22}
+MID_HAND_SCORE = {'high': 0, 'pair': 0, 'two_pair': 0, 'trips': 2, 'straight': 4, 'flush': 8, 'full_house': 12,
+                  'quads': 20,
+                  'poker': 30, 'royal': 50}
+BOTTOM_HAND_SCORE = {'high': 0, 'pair': 0, 'two_pair': 0, 'straight': 2, 'flush': 4, 'full_house': 6, 'quads': 10,
+                     'poker': 15, 'royal': 25}
+HAND_SCORE = [0, TOP_HAND_SCORE, MID_HAND_SCORE, BOTTOM_HAND_SCORE]
 
 
 # Hand strength
@@ -52,7 +58,7 @@ class Deck(object):
     def build(self):
         suits = ['S', 'C', 'H', 'D']
         deck_of_cards = []
-        for rank in range(1, 15):
+        for rank in range(2, 15):
             for suit in suits:
                 deck_of_cards.append(Card(rank, suit))
         if isinstance(self.burn_cards, list):
@@ -67,99 +73,106 @@ class Deck(object):
         return self.cards.queue.pop()
 
 
-class HandStrength(object):
-    # need to be implemented in hand
-    def __init__(self, cards):
-
-        self.hand_type = 0
-        self.hand_name = ''
-        self.ranks = [v.get_value() for v in cards]
-        self.suit = [v.get_suit() for v in cards]
-        self.to_compare = []
-        # made hand evaluation
-        histogram = {}
-        ranks = self.ranks
-        ranks.sort()
-        if len(ranks) == 5:
-            for r in ranks:
-                if r in histogram.keys():
-                    histogram[r] = histogram[r] + 1
-                else:
-                    histogram[r] = 1
-            hist_values = histogram.values()
-            hand_type = {0: 'high', 1: 'pair', 2: 'two_pair', 3: 'trips', 4: 'straight', 5: 'flush', 6: 'full',
-                         7: 'quads', 8: 'poker'}
-            if max(hist_values) == 4:
-                # quads
-                self.hand_id = 7
-                self.hand_name = hand_type[self.hand_id]
-                for rank, quantity in histogram.items():
-                    if quantity == 4:
-                        self.to_compare = [rank]
-            elif len(hist_values) == 2:
-                # full
-                self.hand_id = 6
-                self.hand_name = hand_type[self.hand_id]
-                for rank, quantity in histogram.items():
-                    if quantity == 2:
-                        pair = rank
-                    else:
-                        trips = rank
-                self.to_compare = [trips, pair]
-            elif max(hist_values) == 3:
-                # trips
-                self.hand_id = 3
-                self.hand_name = hand_type[self.hand_id]
-                for rank, quantity in histogram.items():
-                    if quantity == 3:
-                        self.to_compare.append(rank)
-                # TODO be careful with sorting rank without sorting suits
-                self.to_compare.sort()
-
-            elif len(hist_values) == 3:
-                # two pairs
-                self.hand_id = 2
-                for rank, quantity in histogram.items():
-                    if quantity == 2:
-                        self.to_compare.append(rank)
-                # TODO be careful with sorting rank without sorting suits
-                self.to_compare.sort()
-
-            elif len(hist_values) == 4:
-                # one pair
-                self.hand_id = 1
-                for rank, quantity in histogram.items():
-                    if quantity == 2:
-                        self.to_compare.append(rank)
-            elif set(self.suit) == 1:
-                # self.ranks.sort()
-                if ranks[-1] - ranks[0] == 4:
-                    self.hand_type = 'straight_flush'
-                else:
-                    self.hand_type = 'flush'
-            elif int(ranks[-1]) - int(ranks[0]) == 4:
-                self.hand_type = 'straight'
-        else:
-            return 0
-
-    def __gt__(self, other):
-        if self.hand_id > other.hand_id:
-            return True
-        elif self.hand_id == other.hand_id:
-            for left, right in zip(self.to_compare, other.to_compare):
-                if left != right:
-                    if left > right:
-                        return True
-                    else:
-                        return False
-                else:
-                    return
-        else:
-            return False
-
-    def __eq__(self, other):
-        # TODO check if hands are equally strong
-        pass
+# class HandStrength(object):
+#     # need to be implemented in hand
+#     def __init__(self, cards):
+#         self.hand_type = 0
+#         self.hand_name = ''
+#         self.ranks = [v.get_value() for v in cards]
+#         self.suit = [v.get_suit() for v in cards]
+#         self.to_compare = []
+#         self.points = 0
+#         # made hand evaluation
+#         histogram = {}
+#         ranks = self.ranks
+#         ranks.sort()
+#         if len(ranks) == 5:
+#             for r in ranks:
+#                 if r in histogram.keys():
+#                     histogram[r] = histogram[r] + 1
+#                 else:
+#                     histogram[r] = 1
+#             hist_values = histogram.values()
+#             hand_type = {0: 'high', 1: 'pair', 2: 'two_pair', 3: 'trips', 4: 'straight', 5: 'flush', 6: 'full',
+#                          7: 'quads', 8: 'poker'}
+#             if max(hist_values) == 4:
+#                 # quads
+#                 self.hand_id = 7
+#                 self.hand_name = hand_type[self.hand_id]
+#                 for rank, quantity in histogram.items():
+#                     if quantity == 4:
+#                         self.to_compare = [rank]
+#             elif len(hist_values) == 2:
+#                 # full
+#                 self.hand_id = 6
+#                 self.hand_name = hand_type[self.hand_id]
+#                 for rank, quantity in histogram.items():
+#                     if quantity == 2:
+#                         pair = rank
+#                     else:
+#                         trips = rank
+#                 self.to_compare = [trips, pair]
+#             elif max(hist_values) == 3:
+#                 # trips
+#                 self.hand_id = 3
+#                 self.hand_name = hand_type[self.hand_id]
+#                 for rank, quantity in histogram.items():
+#                     if quantity == 3:
+#                         self.to_compare.append(rank)
+#                 # TODO be careful with sorting rank without sorting suits
+#                 self.to_compare.sort()
+#
+#             elif len(hist_values) == 3:
+#                 # two pairs
+#                 self.hand_id = 2
+#                 for rank, quantity in histogram.items():
+#                     if quantity == 2:
+#                         self.to_compare.append(rank)
+#                 # TODO be careful with sorting rank without sorting suits
+#                 self.to_compare.sort()
+#
+#             elif len(hist_values) == 4:
+#                 # one pair
+#                 self.hand_id = 1
+#                 for rank, quantity in histogram.items():
+#                     if quantity == 2:
+#                         self.to_compare.append(rank)
+#             elif set(self.suit) == 1:
+#                 # self.ranks.sort()
+#                 if ranks[-1] - ranks[0] == 4:
+#                     self.hand_type = 'straight_flush'
+#                 else:
+#                     self.hand_type = 'flush'
+#             elif int(ranks[-1]) - int(ranks[0]) == 4:
+#                 self.hand_type = 'straight'
+#         else:
+#             if len(ranks) == 3 and len(set(ranks)) == 1:
+#                 hand_str = ''.join([ranks[0].get_value(), ranks[1].get_value(), ranks[2].get_value()])
+#             else:
+#                 if ranks[0] == ranks[1]:
+#                     hand_str = ''.join([ranks[0].get_value(), ranks[1].get_value()])
+#                 elif ranks[0] == ranks[2]:
+#                     hand_str = ''.join([ranks[0].get_value(), ranks[2].get_value()])
+#                 else:
+#                     hand_str = ''.join([ranks[1].get_value(), ranks[2].get_value()])
+#                 print(f'Hand representation {hand_str}')
+#             self.ev = top_hand_royalties[hand_str]
+#
+#     def __gt__(self, other):
+#         if self.hand_id > other.hand_id:
+#             return True
+#         elif self.hand_id == other.hand_id:
+#             for left, right in zip(self.to_compare, other.to_compare):
+#                 if left != right:
+#                     if left > right:
+#                         return True
+#                     else:
+#                         return False
+#                 else:
+#                     return
+#         else:
+#             return False
+#
 
 
 # class FrontHand(object):
@@ -204,24 +217,36 @@ class HandStrength(object):
 
 
 class FrontMidBotHand(object):
-    def __init__(self, max_cards=5):
-        self.number_of_cards = max_cards
-        self.hand = []
+    def __init__(self, max_cards=5, row=None, cards=None):
+        self.max_cards = max_cards
+        if cards is not None:
+            self.hand = cards
+        else:
+            self.hand = []
         self.temp_hand = []
         self.ev = 0
         self.to_compare = None
-        self.hand_completed = False
+        if len(self.hand) < max_cards:
+            self.hand_completed = False
+        else:
+            self.hand_completed = True
+        self.hand_name = ''
+        self.hand_id = 0
+        self.row = row
+        self.points = 0
 
     def evaluate(self):
-        if self.number_of_cards == 5:
-            self.hand_type = 0
-            self.hand_name = ''
-            ranks = [v.get_value() for v in self.hand]
-            suit = [v.get_suit() for v in self.hand]
-            self.to_compare = []
-            # made hand evaluation
-            histogram = {}
-            ranks.sort()
+        self.hand_name = ''
+        ranks = [v.get_value() for v in self.hand]
+        suit = [v.get_suit() for v in self.hand]
+        self.to_compare = []
+        # made hand evaluation
+        histogram = {}
+        ranks.sort()
+        if self.max_cards == 5:
+            hand_type = {0: 'high', 1: 'pair', 2: 'two_pair', 3: 'trips', 4: 'straight', 5: 'flush', 6: 'full',
+                         7: 'quads', 8: 'poker'}
+
             if len(ranks) == 5:
                 for r in ranks:
                     if r in histogram.keys():
@@ -229,19 +254,16 @@ class FrontMidBotHand(object):
                     else:
                         histogram[r] = 1
                 hist_values = histogram.values()
-                hand_type = {0: 'high', 1: 'pair', 2: 'two_pair', 3: 'trips', 4: 'straight', 5: 'flush', 6: 'full',
-                             7: 'quads', 8: 'poker'}
+
                 if max(hist_values) == 4:
                     # quads
                     self.hand_id = 7
-                    self.hand_name = hand_type[self.hand_id]
                     for rank, quantity in histogram.items():
                         if quantity == 4:
                             self.to_compare = [rank]
                 elif len(hist_values) == 2:
                     # full
                     self.hand_id = 6
-                    self.hand_name = hand_type[self.hand_id]
                     for rank, quantity in histogram.items():
                         if quantity == 2:
                             pair = rank
@@ -251,7 +273,6 @@ class FrontMidBotHand(object):
                 elif max(hist_values) == 3:
                     # trips
                     self.hand_id = 3
-                    self.hand_name = hand_type[self.hand_id]
                     for rank, quantity in histogram.items():
                         if quantity == 3:
                             self.to_compare.append(rank)
@@ -273,20 +294,60 @@ class FrontMidBotHand(object):
                     for rank, quantity in histogram.items():
                         if quantity == 2:
                             self.to_compare.append(rank)
-                elif set(suit) == 1:
+                elif len(set(suit)) == 1:
                     # self.ranks.sort()
                     if ranks[-1] - ranks[0] == 4:
-                        self.hand_type = 'straight_flush'
+                        self.hand_id = 8
                     else:
-                        self.hand_type = 'flush'
+                        self.hand_id = 5
                 elif int(ranks[-1]) - int(ranks[0]) == 4:
-                    self.hand_type = 'straight'
-            else:
-                return 0
-        elif self.number_of_cards == 3:
-            self.ev = 0
+                    self.hand_id = 4
+                else:
+                    self.hand_id = 0
+            self.hand_name = hand_type[self.hand_id]
+            self.points = HAND_SCORE[self.row][self.hand_name]
+            print(self.points)
+        #   return hand_type[self.hand_id]
+        elif self.max_cards == 3:
+            if len(ranks) == 3 and len(set(ranks)) == 1:
+                # Trips
+                hand_str = ''.join([ranks[0].get_value(), ranks[1].get_value(), ranks[2].get_value()])
+                self.hand_id = 3
 
-        return self.ev
+            elif len(set(ranks)) == 2:
+                # Pair
+                if ranks[0] == ranks[1]:
+                    hand_str = ''.join([str(ranks[0]), str(ranks[1])])
+                    self.to_compare = [ranks[0], ranks[1], ranks[2]]
+                elif ranks[0] == ranks[2]:
+                    hand_str = ''.join([ranks[0], ranks[2]])
+                    self.to_compare = [ranks[0], ranks[2], ranks[1]]
+                else:
+                    hand_str = ''.join([ranks[1], ranks[2]])
+                    self.to_compare = [ranks[1], ranks[2], ranks[0]]
+                print(f'Hand representation {hand_str}')
+            else:
+                self.to_compare = [ranks]
+            self.points = TOP_HAND_SCORE[hand_str]
+            print(self.points)
+        return self.hand_id
+
+    def __gt__(self, other):
+        if self.evaluate() > other.evaluate():
+            return True
+        elif self.hand_id == other.hand_id:
+            for left, right in zip(self.to_compare, other.to_compare):
+                if left != right:
+                    if left > right:
+                        return True
+                    else:
+                        return False
+                else:
+                    return
+
+        def __eq__(self, other):
+            # TODO check if hands are equally strong
+            pass
 
     def add_card(self, new_card):
         if isinstance(new_card, list):
@@ -294,7 +355,7 @@ class FrontMidBotHand(object):
                 self.hand.append(card)
         elif isinstance(new_card, Card):
             self.hand.append(new_card)
-        if len(self.hand) == self.number_of_cards:
+        if len(self.hand) == self.max_cards:
             self.hand_completed = True
 
     def add_card_to_temp(self, new_card):
@@ -303,7 +364,7 @@ class FrontMidBotHand(object):
                 self.temp_hand.append(card)
         elif isinstance(new_card, Card):
             self.temp_hand.append(new_card)
-            if len(self.hand) + len(self.temp_hand) == self.number_of_cards:
+            if len(self.hand) + len(self.temp_hand) == self.max_cards:
                 self.hand_completed = True
 
     def set_temp_to_hand(self):
@@ -320,19 +381,18 @@ class FrontMidBotHand(object):
 
 
 class OfcHand(object):
-    def __init__(self):
-        self.top_row = FrontMidBotHand(3)
-        self.mid_row = FrontMidBotHand(5)
-        self.bottom_row = FrontMidBotHand(5)
-        self.total_cards = 0
+
+    def __init__(self, top=None, mid=None, bot=None):
+        self.top_row = FrontMidBotHand(max_cards=3, row=1, cards=top)
+        self.mid_row = FrontMidBotHand(max_cards=5, row=2, cards=mid)
+        self.bottom_row = FrontMidBotHand(max_cards=5, row=3, cards=bot)
+        self.total_cards = len(self.top_row.hand) + len(self.mid_row.hand) + len(self.bottom_row.hand)
 
     def is_it_foul(self):
-        front = HandStrength(self.top_row.hand)
-        mid = HandStrength(self.mid_row.hand)
-        bot = HandStrength(self.mid_row.hand)
         if len(self.top_row.hand) == 3 and len(self.mid_row.hand) == 5 and len(self.mid_row.hand) == 5:
             # OFC rules
-            if bot > mid > front:
+
+            if self.bottom_row > self.mid_row > self.top_row:
                 return True
             else:
                 return False
@@ -340,6 +400,78 @@ class OfcHand(object):
             return True
 
     # if self.bottom_row.hand
+
+    def evaluate(self):
+        if not self.is_it_foul():
+            ev = 0
+            for row, hand in enumerate([self.top_row, self.mid_row, self.bottom_row]):
+                ev += HAND_SCORE[row][hand.evaluate()]
+            return ev
+
+        else:
+            return -10
+
+    def add_card(self, card, row):
+        if isinstance(row, str):
+            if row == '1':
+                if not self.top_row.hand_completed:
+                    self.top_row.add_card_to_temp(card)
+                    return True
+                else:
+                    print('Hand is completed')
+                    return False
+            if row == '2':
+                if not self.mid_row.hand_completed:
+                    self.mid_row.add_card_to_temp(card)
+                    return True
+                else:
+                    print('Hand is completed')
+                    return False
+            if row == '3':
+                if not self.bottom_row.hand_completed:
+                    self.bottom_row.add_card_to_temp(card)
+                    return True
+                else:
+                    print('Hand is completed')
+                    return False
+        else:
+            print('Wrong format of row: should be str 1: top, 2:mid and 3:bot')
+
+    def add_card_to_front(self, card, ):
+        if not self.top_row.hand_completed:
+            self.top_row.add_card(card)
+            return True
+        else:
+            print('Hand is completed')
+            return False
+
+    def add_card_to_mid(self, card):
+        if not self.mid_row.hand_completed:
+            self.mid_row.add_card(card)
+            return True
+        else:
+            print('Hand is completed')
+            return
+
+    def add_card_to_bottom(self, card):
+        if not self.bottom_row.hand_completed:
+            self.bottom_row.add_card(card)
+            return True
+        else:
+            print('Hand is completed')
+            return False
+
+    def reset(self):
+        self.top_row.temp_hand = []
+        self.mid_row.temp_hand = []
+        self.bottom_row.temp_hand = []
+
+    def set_changes(self):
+        self.top_row.set_temp_to_hand()
+        self.mid_row.set_temp_to_hand()
+        self.bottom_row.set_temp_to_hand()
+        self.total_cards = self.top_row.get_hand_len() + self.bottom_row.get_hand_len() + self.mid_row.get_hand_len()
+
     def __str__(self):
         game_look = ''
 
@@ -419,71 +551,6 @@ class OfcHand(object):
         print(colored(bottom_hand_temp, 'red', 'on_cyan'))
         print(colored(line, 'blue'))
 
-    def evaluate(self):
-        pass
-
-    def add_card_to_front(self, card):
-        if not self.top_row.hand_completed:
-            self.top_row.add_card(card)
-            return True
-        else:
-            print('Hand is completed')
-            return False
-
-    def add_card_to_front_temp(self, card):
-        if not self.top_row.hand_completed:
-            self.top_row.add_card_to_temp(card)
-            return True
-        else:
-            print('Hand is completed')
-            return False
-
-    def add_card_to_mid(self, card):
-        if not self.mid_row.hand_completed:
-            self.mid_row.add_card(card)
-            return True
-        else:
-            print('Hand is completed')
-            return
-
-    def add_card_to_mid_temp(self, card):
-        if not self.mid_row.hand_completed:
-            self.mid_row.add_card_to_temp(card)
-            return True
-        else:
-            print('Hand is completed')
-            return False
-
-    def add_card_to_bottom(self, card):
-        if not self.bottom_row.hand_completed:
-            self.bottom_row.add_card(card)
-            return True
-        else:
-            print('Hand is completed')
-            return False
-
-    def add_card_to_bottom_temp(self, card):
-        if not self.bottom_row.hand_completed:
-            self.bottom_row.add_card_to_temp(card)
-            return True
-        else:
-            print('Hand is completed')
-            return False
-
-    def reset(self):
-        self.top_row.temp_hand = []
-        self.mid_row.temp_hand = []
-        self.bottom_row.temp_hand = []
-
-    def set_changes(self):
-        self.top_row.set_temp_to_hand()
-        self.mid_row.set_temp_to_hand()
-        self.bottom_row.set_temp_to_hand()
-        self.total_cards = self.top_row.get_hand_len() + self.bottom_row.get_hand_len() + self.mid_row.get_hand_len()
-
-    def evaluate_hand(self):
-        pass
-
 
 class CardsToPlace(object):
     def __init__(self, cards):
@@ -532,7 +599,7 @@ def game(board=None, deck=None):
         board = OfcHand()
         holdings = CardsToPlace([deck.get_card() for _ in range(5)])
     elif board.total_cards == 13:
-        print('game is over')
+        print(f'Final result is {board.evaluate()}')
         return 0
     else:
         holdings = CardsToPlace([deck.get_card() for _ in range(3)])
@@ -560,17 +627,17 @@ def game(board=None, deck=None):
             to_hand = line[-1]
             if to_hand == '1':
                 if holdings.check_if_available(card_number) and not board.top_row.hand_completed:
-                    board.add_card_to_front_temp(holdings.get_card(card_number))
+                    board.add_card(holdings.get_card(card_number), to_hand)
                 else:
                     print('Card already used or row is full')
             elif to_hand == '2':
                 if holdings.check_if_available(card_number) and not board.mid_row.hand_completed:
-                    board.add_card_to_mid_temp(holdings.get_card(card_number))
+                    board.add_card(holdings.get_card(card_number), to_hand)
                 else:
                     print('Card already used or row is full ')
             elif to_hand == '3' and not board.bottom_row.hand_completed:
                 if holdings.check_if_available(card_number):
-                    board.add_card_to_bottom_temp(holdings.get_card(card_number))
+                    board.add_card(holdings.get_card(card_number), to_hand)
                 else:
                     print('Card already used or row is full ')
             else:
@@ -591,6 +658,14 @@ def test_board_look():
     test_hand.print_hand()
 
 
+def test_hand_evaluation():
+    board = OfcHand(top=[Card(7, 'D'), Card(7, 'C'), Card(8, 'S')],
+                    mid=[Card(6, 'S'), Card(5, 'C'), Card(4, 'S'), Card(3, 'C'), Card(2, 'D')],
+                    bot=[Card(7, 'S'), Card(5, 'S'), Card(4, 'S'), Card(3, 'S'), Card(2, 'S')])
+    board.print_hand()
+    board.evaluate()
+
+
 if __name__ == '__main__':
     # card1 = [Card('1', 'D')]
     # card1 = [Card('1', 'D')]
@@ -603,14 +678,13 @@ if __name__ == '__main__':
     # hs = HandStrength(straight)
     # print(hs.hand_type)
     test_hand = OfcHand()
-    [test_hand.add_card_to_front(card1) for _ in range(1)]
+    #    [test_hand.add_card_to_front(card1) for _ in range(1)]
 
-    [test_hand.add_card_to_front_temp(card1) for _ in range(2)]
-    #  from colorama import init, Fore
-    # from termcolor import colored
+    # [test_hand.ad(card1) for _ in range(2)]
 
     # [test_hand.add_card_to_mid(card1) for _ in range(5)]
     # [test_hand.add_card_to_bottom(card2) for _ in range(5)]
     # print(test_hand)
     # init()
-    game()
+    # game()
+    test_hand_evaluation()
