@@ -4,6 +4,7 @@ import queue
 import fileinput
 from colorama import init
 from termcolor import colored
+from PIL import ImageTk, Image
 
 TOP_HAND_SCORE = {'66': 1, '77': 2, '88': 3, '99': 4, '´1010': 5, '1111': 6, '1212': 7, '1313': 8, '11': 9,
                   '222': 10, '333': 11, '444': 12, '555': 13, '666': 14, '777': 15, '888': 16, '999': 17,
@@ -31,6 +32,7 @@ class Card(object):
     def __init__(self, value, suit):
         self.value = value
         self.suit = suit
+        self.image = None
 
     def __str__(self):
         return f'{self.value}{self.suit}'
@@ -46,6 +48,10 @@ class Card(object):
 
     def get_suit(self):
         return self.suit
+
+    def representation(self):
+        self.image = ImageTk.PhotoImage(Image.open("Cards/{}{}.png".format(self.value, self.suit)))
+        return self.image
 
 
 class Deck(object):
