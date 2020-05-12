@@ -47,10 +47,12 @@ switch = 0
 
 button = Button(board, text='SET', state=DISABLED)
 button.place(x=600, y=50)
+button_reset = Button(board, text='RESET')
+button_reset.place(x=590, y=15)
 
 
 def create_new_card_image(card, x_position, y_position):
-    board.create_image(x_position, y_position, image=card.representation(), tags=('draw', 'bottom_row'))
+    board.create_image(x_position, y_position, image=card.representation(), tags=('draw', 'bottom_row', 'reset'))
 
 
 # first draw(5 cards)
@@ -83,8 +85,23 @@ def all_rows_reload(bottom_row, row1, row2, row3):
     row_reload(row3, 270, 55)
 
 
+def reset():
+    round_cards = board.find_withtag('reset')
+    for card in round_cards:
+        board.itemconfig(card, tags=('draw', 'reset', 'bottom_row'))
+    row1 = board.find_withtag('row1')
+    row2 = board.find_withtag('row2')
+    row3 = board.find_withtag('row3')
+    bottom_row = board.find_withtag('bottom_row')
+    all_rows_reload(bottom_row, row1, row2, row3)
+
+
+button_reset.config(command=reset)
+
+
 # creating set button
 def set_position():
+    board.dtag('reset')
     row1 = board.find_withtag('row1')
     row2 = board.find_withtag('row2')
     row3 = board.find_withtag('row3')
@@ -180,12 +197,14 @@ def tag_add(event):
             board.coords(selected_card, (200 + len(row3) * 70), 55)
             row_reload(row3, 270, 55)
         else:
-            board.itemconfig(selected_card, tags=('draw', 'bottom_row'))
+            board.itemconfig(selected_card, tags=('draw', 'bottom_row', 'reset'))
             board.coords(selected_card, (130 + len(bottom_row) * 70), 370)
             row_reload(bottom_row, 200, 370)
 
-        if (len(row1) + len(row2) + len(row3)) in [5, 7, 9, 11, 13]:
+        if (len(row1) + len(row2) + len(row3)) in [5, 7, 9, 11, 13] and len(bottom_row) in [0, 1]:
             button.config(state=NORMAL)
+        else:
+            button.config(state=DISABLED)
 
         row1 = board.find_withtag('row1')
         row2 = board.find_withtag('row2')
