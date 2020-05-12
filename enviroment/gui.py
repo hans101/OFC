@@ -1,4 +1,4 @@
-from game import Card, Deck, OfcHand
+from game import Card, Deck, OfcHand, FrontMidBotHand
 from tkinter import *
 from re import *
 import os
@@ -44,6 +44,9 @@ all_hand_cards = [deck.get_card() for card in range(1, 18)]
 all_hand_cards.insert(0, back_card_image)
 
 switch = 0
+
+button = Button(board, text='SET', state=DISABLED)
+button.place(x=600, y=50)
 
 
 def create_new_card_image(card, x_position, y_position):
@@ -93,7 +96,7 @@ def set_position():
         for i in range(0, len(burned_cards)):
             board.itemconfig(burned_cards[i], tag='burn')
             board.itemconfig(burned_cards[i], state=HIDDEN)
-            board.coords(burned_cards[i], (130 - i*30), 370)
+            board.coords(burned_cards[i], (130 - i * 30), 370)
 
     card_number = len(row1) + len(row2) + len(row3)
     possible_cards_quantity = [5, 7, 9, 11, 13]
@@ -127,12 +130,12 @@ def set_position():
             bottom = [returning_card_of_image_object(card) for card in row1]
             new_hand = OfcHand(top=top, bot=bottom, mid=mid)
             print(new_hand)
+        button.config(state=DISABLED)
     else:
         pass
 
 
-button = Button(board, text='SET', command=set_position)
-button.place(x=600, y=50)
+button.config(command=set_position)
 
 
 def card_move(event):
@@ -167,19 +170,22 @@ def tag_add(event):
         row2 = board.find_withtag('row2')
         row3 = board.find_withtag('row3')
         bottom_row = board.find_withtag('bottom_row')
-        if selected_card in row1:
+        if selected_card in row1 and len(row1) < 6:
             board.coords(selected_card, (130 + len(row1) * 70), 265)
             row_reload(row1, 200, 265)
-        elif selected_card in row2:
+        elif selected_card in row2 and len(row2) < 6:
             board.coords(selected_card, (130 + len(row2) * 70), 160)
             row_reload(row2, 200, 160)
-        elif selected_card in row3:
+        elif selected_card in row3 and len(row3) < 4:
             board.coords(selected_card, (200 + len(row3) * 70), 55)
             row_reload(row3, 270, 55)
         else:
             board.itemconfig(selected_card, tags=('draw', 'bottom_row'))
             board.coords(selected_card, (130 + len(bottom_row) * 70), 370)
             row_reload(bottom_row, 200, 370)
+
+        if (len(row1) + len(row2) + len(row3)) in [5, 7, 9, 11, 13]:
+            button.config(state=NORMAL)
 
         row1 = board.find_withtag('row1')
         row2 = board.find_withtag('row2')
@@ -194,7 +200,7 @@ def display_burned_cards(event):
     switch += 1
     # show/hide burned cards:
     burned_cards = board.find_withtag('burn')
-    if switch %2 == 0:
+    if switch % 2 == 1:
         if burned_cards:
             for card in burned_cards:
                 board.itemconfig(card, state=NORMAL)
