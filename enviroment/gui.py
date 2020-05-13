@@ -55,7 +55,8 @@ button_reset.place(x=590, y=15)
 
 # function to create image on board
 def create_new_card_image(card, x_position, y_position):
-    board.create_image(x_position, y_position, image=card.representation(), tags=('draw', 'bottom_row', 'reset'))
+    board.create_image(x_position, y_position, image=card.representation(),
+                       tags=('draw', 'bottom_row', 'reset', 'card' + str(card)))
 
 
 # first draw(5 cards)
@@ -65,9 +66,10 @@ def first_draw():
 
 # function returning card object of specified card image
 def returning_card_of_image_object(image_object):
-    image_name = board.itemcget(image_object, 'image')
-    result = re.search(r'\d+', image_name)
-    card = all_hand_cards[int(result.group()) - 1]
+    image_name = board.itemcget(image_object, 'tags')
+    result = re.search(r'\d+[A-Z]', image_name)
+    card_index = all_hand_cards.index(result.group())
+    card = all_hand_cards[card_index]
     return card
 
 
@@ -92,7 +94,11 @@ def all_rows_reload(bottom_row, row1, row2, row3):
 def reset():
     round_cards = board.find_withtag('reset')
     for card in round_cards:
-        board.itemconfig(card, tags=('draw', 'reset', 'bottom_row'))
+        board.dtag(card, 'row1')
+        board.dtag(card, 'row2')
+        board.dtag(card, 'row3')
+        card_tags = board.itemcget(card, 'tags') + ' bottom_row'
+        board.itemconfig(card, tags=card_tags)
     row1 = board.find_withtag('row1')
     row2 = board.find_withtag('row2')
     row3 = board.find_withtag('row3')
@@ -196,9 +202,12 @@ def tag_add(event):
             board.coords(selected_card, (200 + len(row3) * 70), 55)
             row_reload(row3, 270, 55)
         else:
-            board.itemconfig(selected_card, tags=('draw', 'bottom_row', 'reset'))
+            selected_card_tags = board.itemcget(selected_card, 'tags') + ' bottom_row'
+            board.itemconfig(selected_card, tags=selected_card_tags)
             board.coords(selected_card, (130 + len(bottom_row) * 70), 370)
             row_reload(bottom_row, 200, 370)
+
+        returning_card_of_image_object(selected_card)
 
         if (len(row1) + len(row2) + len(row3)) in [5, 7, 9, 11, 13] and len(bottom_row) in [0, 1]:
             button.config(state=NORMAL)
@@ -234,9 +243,10 @@ def display_burned_cards(event):
                 board.itemconfig(card, state=HIDDEN)
 
 
-first_draw()
 button.config(command=set_position)
 button_reset.config(command=reset)
+
+first_draw()
 
 board.bind("<B1-Motion>", card_move)
 board.bind('<ButtonRelease-1>', tag_add)

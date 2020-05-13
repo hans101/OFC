@@ -38,10 +38,13 @@ class Card(object):
         return f'{self.value}{self.suit}'
 
     def __eq__(self, other):
-        if self.value == other.value and self.suit == other.suit:
+        '''if self.value == other.value and self.suit == other.suit:
             return True
         else:
-            False
+            False'''
+        if self.__str__() == other:
+            return True
+        return False
 
     def get_value(self):
         return self.value
@@ -55,7 +58,7 @@ class Card(object):
 
 
 class Deck(object):
-    def __init__(self, random_seed=123, burnt_cards=None):
+    def __init__(self, random_seed=random.randint(1, 500), burnt_cards=None):
         self.cards = []
         self.random_seed = random_seed
         self.burn_cards = burnt_cards
@@ -315,6 +318,7 @@ class FrontMidBotHand(object):
             print(self.points)
         #   return hand_type[self.hand_id]
         elif self.max_cards == 3:
+            hand_str = ''
             if len(ranks) == 3 and len(set(ranks)) == 1:
                 # Trips
                 hand_str = ''.join([ranks[0].get_value(), ranks[1].get_value(), ranks[2].get_value()])
