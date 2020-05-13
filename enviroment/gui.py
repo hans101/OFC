@@ -43,14 +43,17 @@ board.create_image(130, 370, image=back_card_image, tag='card_back', state=HIDDE
 all_hand_cards = [deck.get_card() for card in range(1, 18)]
 all_hand_cards.insert(0, back_card_image)
 
+# switch to show/hide burned cards
 switch = 0
 
+# create set and reset button
 button = Button(board, text='SET', state=DISABLED)
 button.place(x=600, y=50)
-button_reset = Button(board, text='RESET')
+button_reset = Button(board, text='RESET', state=DISABLED)
 button_reset.place(x=590, y=15)
 
 
+# function to create image on board
 def create_new_card_image(card, x_position, y_position):
     board.create_image(x_position, y_position, image=card.representation(), tags=('draw', 'bottom_row', 'reset'))
 
@@ -60,6 +63,7 @@ def first_draw():
     [create_new_card_image(all_hand_cards[i], (130 + (i * 70)), 370) for i in range(1, 6)]
 
 
+# function returning card object of specified card image
 def returning_card_of_image_object(image_object):
     image_name = board.itemcget(image_object, 'image')
     result = re.search(r'\d+', image_name)
@@ -67,14 +71,13 @@ def returning_card_of_image_object(image_object):
     return card
 
 
-first_draw()
-
-
+# setting in order objects in a chosen row
 def row_reload(row, x_position, y_position):
     for i in range(0, len(row)):
         board.coords(row[i], (x_position + (i * 70)), y_position)
 
 
+# setting all cards in all rows in order
 def all_rows_reload(bottom_row, row1, row2, row3):
     if len(bottom_row) > 4:
         row_reload(bottom_row, 200, 370)
@@ -85,6 +88,7 @@ def all_rows_reload(bottom_row, row1, row2, row3):
     row_reload(row3, 270, 55)
 
 
+# handle reset button
 def reset():
     round_cards = board.find_withtag('reset')
     for card in round_cards:
@@ -94,9 +98,7 @@ def reset():
     row3 = board.find_withtag('row3')
     bottom_row = board.find_withtag('bottom_row')
     all_rows_reload(bottom_row, row1, row2, row3)
-
-
-button_reset.config(command=reset)
+    button_reset.config(state=DISABLED)
 
 
 # creating set button
@@ -150,9 +152,6 @@ def set_position():
         button.config(state=DISABLED)
     else:
         pass
-
-
-button.config(command=set_position)
 
 
 def card_move(event):
@@ -213,6 +212,12 @@ def tag_add(event):
 
         all_rows_reload(bottom_row, row1, row2, row3)
 
+        this_round_cards = board.find_withtag('reset')
+
+        for card in this_round_cards:
+            if card in row1 or card in row2 or card in row3:
+                button_reset.config(state=NORMAL)
+
 
 def display_burned_cards(event):
     global switch
@@ -228,6 +233,10 @@ def display_burned_cards(event):
             for card in burned_cards:
                 board.itemconfig(card, state=HIDDEN)
 
+
+first_draw()
+button.config(command=set_position)
+button_reset.config(command=reset)
 
 board.bind("<B1-Motion>", card_move)
 board.bind('<ButtonRelease-1>', tag_add)
