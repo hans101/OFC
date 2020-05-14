@@ -22,7 +22,7 @@ class Game:
         self.new_hand()
 
     def create_deck(self):
-        self.deck = Deck()
+        self.deck = Deck(randint(1, 500))
         # creating back card image
         back_card_image = ImageTk.PhotoImage(Image.open("Cards/green_back.png"))
         self.board.create_image(130, 370, image=back_card_image, tags=('card_back', 'this'), state=HIDDEN)
@@ -162,6 +162,13 @@ class Game:
                 mid = [self.returning_card_of_image_object(card) for card in row2]
                 bottom = [self.returning_card_of_image_object(card) for card in row1]
                 new_hand = OfcHand(top=top, bot=bottom, mid=mid)
+                test_rows = [bottom, mid, top]
+                test1 = FrontMidBotHand(5, 3, bottom)
+                test2 = FrontMidBotHand(5, 2, mid)
+                test3 = FrontMidBotHand(3, 1, top)
+                test1.evaluate()
+                test2.evaluate()
+                test3.evaluate()
                 print(new_hand)
 
                 self.delete_all_cards()

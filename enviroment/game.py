@@ -6,7 +6,7 @@ from colorama import init
 from termcolor import colored
 from PIL import ImageTk, Image
 
-TOP_HAND_SCORE = {'66': 1, '77': 2, '88': 3, '99': 4, '´1010': 5, '1111': 6, '1212': 7, '1313': 8, '11': 9,
+TOP_HAND_SCORE = {'66': 1, '77': 2, '88': 3, '99': 4, '1010': 5, '1111': 6, '1212': 7, '1313': 8, '11': 9,
                   '222': 10, '333': 11, '444': 12, '555': 13, '666': 14, '777': 15, '888': 16, '999': 17,
                   '101010': 18, '111111': 19, '121212': 20, '131313': 21, '111': 22}
 MID_HAND_SCORE = {'high': 0, 'pair': 0, 'two_pair': 0, 'trips': 2, 'straight': 4, 'flush': 8, 'full_house': 12,
@@ -58,7 +58,7 @@ class Card(object):
 
 
 class Deck(object):
-    def __init__(self, random_seed=random.randint(1, 500), burnt_cards=None):
+    def __init__(self, random_seed, burnt_cards=None):
         self.cards = []
         self.random_seed = random_seed
         self.burn_cards = burnt_cards
@@ -321,7 +321,7 @@ class FrontMidBotHand(object):
             hand_str = ''
             if len(ranks) == 3 and len(set(ranks)) == 1:
                 # Trips
-                hand_str = ''.join([ranks[0].get_value(), ranks[1].get_value(), ranks[2].get_value()])
+                hand_str = ''.join([str(ranks[0]), str(ranks[1]), str(ranks[2])])
                 self.hand_id = 3
 
             elif len(set(ranks)) == 2:
@@ -330,15 +330,17 @@ class FrontMidBotHand(object):
                     hand_str = ''.join([str(ranks[0]), str(ranks[1])])
                     self.to_compare = [ranks[0], ranks[1], ranks[2]]
                 elif ranks[0] == ranks[2]:
-                    hand_str = ''.join([ranks[0], ranks[2]])
+                    hand_str = ''.join([str(ranks[0]), str(ranks[2])])
                     self.to_compare = [ranks[0], ranks[2], ranks[1]]
                 else:
-                    hand_str = ''.join([ranks[1], ranks[2]])
+                    hand_str = ''.join([str(ranks[1]), str(ranks[2])])
                     self.to_compare = [ranks[1], ranks[2], ranks[0]]
-                print(f'Hand representation {hand_str}')
             else:
                 self.to_compare = [ranks]
-            self.points = TOP_HAND_SCORE[hand_str]
+            try:
+                self.points = TOP_HAND_SCORE[hand_str]
+            except KeyError:
+                self.points = 0
             print(self.points)
         return self.hand_id
 
