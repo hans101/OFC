@@ -12,8 +12,8 @@ TOP_HAND_SCORE = {'66': 1, '77': 2, '88': 3, '99': 4, '1010': 5, '1111': 6, '121
 MID_HAND_SCORE = {'high': 0, 'pair': 0, 'two_pair': 0, 'trips': 2, 'straight': 4, 'flush': 8, 'full_house': 12,
                   'quads': 20,
                   'poker': 30, 'royal': 50}
-BOTTOM_HAND_SCORE = {'high': 0, 'pair': 0, 'two_pair': 0, 'straight': 2, 'flush': 4, 'full_house': 6, 'quads': 10,
-                     'poker': 15, 'royal': 25}
+BOTTOM_HAND_SCORE = {'high': 0, 'pair': 0, 'two_pair': 0, 'trips': 0, 'straight': 2, 'flush': 4, 'full_house': 6,
+                     'quads': 10, 'poker': 15, 'royal': 25}
 HAND_SCORE = [0, TOP_HAND_SCORE, MID_HAND_SCORE, BOTTOM_HAND_SCORE]
 
 
@@ -253,7 +253,7 @@ class FrontMidBotHand(object):
         histogram = {}
         ranks.sort()
         if self.max_cards == 5:
-            hand_type = {0: 'high', 1: 'pair', 2: 'two_pair', 3: 'trips', 4: 'straight', 5: 'flush', 6: 'full',
+            hand_type = {0: 'high', 1: 'pair', 2: 'two_pair', 3: 'trips', 4: 'straight', 5: 'flush', 6: 'full_house',
                          7: 'quads', 8: 'poker'}
 
             if len(ranks) == 5:
