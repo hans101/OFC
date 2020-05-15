@@ -17,6 +17,8 @@ class Game:
         self.button_reset = None
         self.switch = None
         self.all_hand_cards = None
+        self.hand_history = {}
+        self.hand_id = None
 
         self.board_prepare()
         self.new_hand()
@@ -117,11 +119,30 @@ class Game:
 
     # creating set button
     def set_position(self):
-        self.board.dtag('reset')
+
         row1 = self.board.find_withtag('row1')
         row2 = self.board.find_withtag('row2')
         row3 = self.board.find_withtag('row3')
         bottom_row = self.board.find_withtag('bottom_row')
+
+        # adding burned card to HH
+        burned_card = ''
+        if bottom_row:
+            burned_card = self.returning_card_of_image_object(bottom_row[0]).__str__()
+
+        # adding all drew hands to HH
+        this_round_cards = self.board.find_withtag('reset')
+        this_round_cards_str = [self.returning_card_of_image_object(card).__str__() for card in this_round_cards]
+
+        # cards added only in this round
+        cards_append_to_row1 = [self.returning_card_of_image_object(card).__str__()
+                                for card in row1 if card in this_round_cards]
+        cards_append_to_row2 = [self.returning_card_of_image_object(card).__str__()
+                                for card in row2 if card in this_round_cards]
+        cards_append_to_row3 = [self.returning_card_of_image_object(card).__str__()
+                                for card in row3 if card in this_round_cards]
+        this_round_cards_added = (this_round_cards_str, cards_append_to_row1, cards_append_to_row2,
+                                  cards_append_to_row3, burned_card)
 
         if bottom_row:
             self.board.addtag_withtag('burn', 'bottom_row')
@@ -136,33 +157,44 @@ class Game:
 
         card_back = self.board.find_withtag('card_back')
 
+        self.board.dtag('reset')
+
         if card_number in possible_cards_quantity:
             # placing cards on board
+            round_description = ''
             if card_number == 5:
                 self.board.dtag('draw')
+                round_description = 'draw 1'
+                self.hand_history[round_description] = (this_round_cards, this_round_cards_added, burned_card)
                 # second draw(3 cards)
                 [self.create_new_card_image(self.all_hand_cards[i], (-150 + (i * 70)), 370) for i in range(6, 9)]
             elif card_number == 7:
+                round_description = 'draw 2'
                 self.board.dtag('draw')
                 self.board.itemconfig(card_back, state=NORMAL)
                 # third draw(3 cards)
                 [self.create_new_card_image(self.all_hand_cards[i], (-360 + (i * 70)), 370) for i in range(9, 12)]
             elif card_number == 9:
+                round_description = 'draw 3'
                 self.board.dtag('draw')
                 # fourth draw(3 cards)
                 [self.create_new_card_image(self.all_hand_cards[i], (-570 + (i * 70)), 370) for i in range(12, 15)]
             elif card_number == 11:
+                round_description = 'draw 4'
                 self.board.dtag('draw')
                 # fifth_draw(5 cards)
                 [self.create_new_card_image(self.all_hand_cards[i], (-780 + (i * 70)), 370) for i in range(15, 18)]
             elif card_number == 13:
+                round_description = 'draw 5'
                 self.board.dtag('draw')
+
+                # adding data to HH
+                self.hand_history[round_description] = this_round_cards_added
 
                 top = [self.returning_card_of_image_object(card) for card in row3]
                 mid = [self.returning_card_of_image_object(card) for card in row2]
                 bottom = [self.returning_card_of_image_object(card) for card in row1]
                 new_hand = OfcHand(top=top, bot=bottom, mid=mid)
-                test_rows = [bottom, mid, top]
                 test1 = FrontMidBotHand(5, 3, bottom)
                 test2 = FrontMidBotHand(5, 2, mid)
                 test3 = FrontMidBotHand(3, 1, top)
@@ -171,13 +203,22 @@ class Game:
                 test3.evaluate()
                 print(new_hand)
 
+                self.hand_history_handler()
+
                 self.delete_all_cards()
                 self.hand_reset()
                 self.new_hand()
 
+            # adding data to HH
+            self.hand_history[round_description] = this_round_cards_added
+
             self.set_button.config(state=DISABLED)
         else:
             pass
+
+    def hand_history_handler(self):
+        new_data = {('hand #' + str(self.hand_id)): self.hand_history}
+        print(new_data)
 
     def card_move(self, event):
         x = self.board.canvasx(event.x)
@@ -292,6 +333,8 @@ class Game:
     def new_hand(self):
         self.hand_reset()
         self.create_deck()
+
+        self.hand_id = randint(10000, 99999)
 
         self.set_button.config(command=self.set_position)
         self.button_reset.config(command=self.reset)
