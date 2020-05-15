@@ -2,6 +2,7 @@ from game import Card, Deck, OfcHand, FrontMidBotHand
 from tkinter import *
 from re import *
 import os
+from datetime import datetime
 from PIL import Image, ImageTk
 from random import choice, randint
 
@@ -128,7 +129,7 @@ class Game:
         # adding burned card to HH
         burned_card = ''
         if bottom_row:
-            burned_card = self.returning_card_of_image_object(bottom_row[0]).__str__()
+            burned_card = (self.returning_card_of_image_object(bottom_row[0]).__str__(),)
 
         # adding all drew hands to HH
         this_round_cards = self.board.find_withtag('reset')
@@ -141,8 +142,15 @@ class Game:
                                 for card in row2 if card in this_round_cards]
         cards_append_to_row3 = [self.returning_card_of_image_object(card).__str__()
                                 for card in row3 if card in this_round_cards]
-        this_round_cards_added = (this_round_cards_str, cards_append_to_row1, cards_append_to_row2,
-                                  cards_append_to_row3, burned_card)
+        row_1_before_append = [self.returning_card_of_image_object(card).__str__()
+                               for card in row1 if card not in this_round_cards]
+        row_2_before_append = [self.returning_card_of_image_object(card).__str__()
+                               for card in row2 if card not in this_round_cards]
+        row_3_before_append = [self.returning_card_of_image_object(card).__str__()
+                               for card in row3 if card not in this_round_cards]
+        this_round_cards_added = (
+            this_round_cards_str, (row_1_before_append, cards_append_to_row1),
+            (row_2_before_append, cards_append_to_row2), (row_3_before_append, cards_append_to_row3), burned_card)
 
         if bottom_row:
             self.board.addtag_withtag('burn', 'bottom_row')
@@ -164,28 +172,27 @@ class Game:
             round_description = ''
             if card_number == 5:
                 self.board.dtag('draw')
-                round_description = 'draw 1'
-                self.hand_history[round_description] = (this_round_cards, this_round_cards_added, burned_card)
+                round_description = 'DRAW 1'
                 # second draw(3 cards)
                 [self.create_new_card_image(self.all_hand_cards[i], (-150 + (i * 70)), 370) for i in range(6, 9)]
             elif card_number == 7:
-                round_description = 'draw 2'
+                round_description = 'DRAW 2'
                 self.board.dtag('draw')
                 self.board.itemconfig(card_back, state=NORMAL)
                 # third draw(3 cards)
                 [self.create_new_card_image(self.all_hand_cards[i], (-360 + (i * 70)), 370) for i in range(9, 12)]
             elif card_number == 9:
-                round_description = 'draw 3'
+                round_description = 'DRAW 3'
                 self.board.dtag('draw')
                 # fourth draw(3 cards)
                 [self.create_new_card_image(self.all_hand_cards[i], (-570 + (i * 70)), 370) for i in range(12, 15)]
             elif card_number == 11:
-                round_description = 'draw 4'
+                round_description = 'DRAW 4'
                 self.board.dtag('draw')
                 # fifth_draw(5 cards)
                 [self.create_new_card_image(self.all_hand_cards[i], (-780 + (i * 70)), 370) for i in range(15, 18)]
             elif card_number == 13:
-                round_description = 'draw 5'
+                round_description = 'DRAW 5'
                 self.board.dtag('draw')
 
                 # adding data to HH
@@ -195,13 +202,21 @@ class Game:
                 mid = [self.returning_card_of_image_object(card) for card in row2]
                 bottom = [self.returning_card_of_image_object(card) for card in row1]
                 new_hand = OfcHand(top=top, bot=bottom, mid=mid)
-                test1 = FrontMidBotHand(5, 3, bottom)
-                test2 = FrontMidBotHand(5, 2, mid)
-                test3 = FrontMidBotHand(3, 1, top)
-                test1.evaluate()
-                test2.evaluate()
-                test3.evaluate()
+
+                self.hand_history['FINAL HAND'] = (
+                    [card.__str__() for card in bottom],
+                    [card.__str__() for card in mid],
+                    [card.__str__() for card in top])
+
+                points_bottom_row = FrontMidBotHand(5, 3, bottom)
+                points_middle_row = FrontMidBotHand(5, 2, mid)
+                points_top_row = FrontMidBotHand(3, 1, top)
+                hand_points = points_bottom_row.evaluate() + points_middle_row.evaluate() + points_top_row.evaluate()
+
+                self.hand_history['EVALUATION'] = (
+                    points_bottom_row.evaluate(), points_middle_row.evaluate(), points_top_row.evaluate(), hand_points)
                 print(new_hand)
+                print(self.hand_history)
 
                 self.hand_history_handler()
 
@@ -217,8 +232,78 @@ class Game:
             pass
 
     def hand_history_handler(self):
-        new_data = {('hand #' + str(self.hand_id)): self.hand_history}
-        print(new_data)
+
+        self.hand_id = 0
+        for _ in os.listdir('HH'):
+            self.hand_id += 1
+
+        str_hand_id = str(self.hand_id)
+
+        while len(str_hand_id) < 5:
+            str_hand_id = '0' + str_hand_id
+
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        file = open("HH/hand#{}.txt".format(str_hand_id), "w+")
+        file.write(f'Hand #{str_hand_id}, played {date}\n\n')
+
+        for key in self.hand_history:
+            file.write('\n{}\n\n'.format(key))
+            if key == 'EVALUATION':
+                file.write('\n\n$$$\nHAND POINTS: {}\nBottom row: {}\nMiddle row: {}\nTop row: {}\n$$$'.format(
+                    self.hand_history[key][3], self.hand_history[key][0], self.hand_history[key][1],
+                    self.hand_history[key][2]))
+
+            elif key == 'FINAL HAND':
+                file.write(
+                    '***BOTTOM ROW ***\n[> {} {} {} {} {} <]\n'.format(self.hand_history[key][0][0],
+                                                                       self.hand_history[key][0][1],
+                                                                       self.hand_history[key][0][2],
+                                                                       self.hand_history[key][0][3],
+                                                                       self.hand_history[key][0][4]))
+                file.write(
+                    '***MIDDLE ROW ***\n[> {} {} {} {} {} <]\n'.format(self.hand_history[key][1][0],
+                                                                       self.hand_history[key][1][1],
+                                                                       self.hand_history[key][1][2],
+                                                                       self.hand_history[key][1][3],
+                                                                       self.hand_history[key][1][4]))
+                file.write(
+                    '***TOP ROW ***\n[> {} {} {} <]'.format(self.hand_history[key][2][0],
+                                                            self.hand_history[key][2][1],
+                                                            self.hand_history[key][2][2]))
+            else:
+                for j in range(0, len(self.hand_history[key])):
+                    text2 = ''
+                    if j == 0:
+                        text2 = '*** CARDS DEALT ***\n'
+                    elif j == 1:
+                        text2 = '\n*** BOTTOM ROW ***\n'
+                    elif j == 2:
+                        text2 = '\n*** MIDDLE ROW ***\n'
+                    elif j == 3:
+                        text2 = '\n*** TOP ROW ***\n'
+                    elif j == 4:
+                        text2 = '\n*** BURNED CARD ***\n'
+
+                    file.write(text2)
+                    if j in (0, 4):
+                        for card in self.hand_history[key][j]:
+                            file.write('[{}]'.format(card))
+                    if j in (1, 2, 3):
+                        for s in range(0, len(self.hand_history[key][j])):
+                            # cards already in a row
+                            if s == 0:
+                                file.write('[> ')
+                                for card in self.hand_history[key][j][s]:
+                                    file.write('{} '.format(card))
+                                file.write('<]')
+                            # new cards
+                            if s == 1:
+                                for card in self.hand_history[key][j][s]:
+                                    file.write('[{}]'.format(card))
+                file.write('\n')
+
+        file.close()
 
     def card_move(self, event):
         x = self.board.canvasx(event.x)

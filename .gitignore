@@ -8,6 +8,8 @@
 
 .idea/*
 enviroment/__pycache__/
+enviroment/HH/*
+!enviroment/HH/.gitkeep.py
 
 
 # User-specific stuff
